@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useForm, usePage, Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
@@ -15,7 +15,7 @@ const form = useForm({
     tag_id: category.tag_id,
     description: category.description,
     meta_title: category.meta_title,
-    meta_keywords: category.meta_keywords,
+    meta_keywords: category.meta_keywords, // JSON string
     meta_description: category.meta_description,
     image: null
 })
@@ -35,26 +35,72 @@ function handleImage(event) {
     }
 }
 
+// Meta keywords handling
+const keywords = ref([])       // tag list
+const newKeyword = ref('')     // current input
+const keywordInput = ref(null) // input ref
+
+// Initialize with existing meta_keywords
+try {
+    const parsed = JSON.parse(category.meta_keywords)
+    if (Array.isArray(parsed)) keywords.value = parsed
+} catch (e) {
+    keywords.value = []
+}
+
+// Functions
+const focusInput = () => {
+    keywordInput.value.focus()
+}
+
+const addKeyword = (event) => {
+    if (event) event.preventDefault()
+    const val = newKeyword.value.trim()
+    if (val !== '') {
+        keywords.value.push(val)
+        newKeyword.value = ''
+        updateFormKeywords()
+    }
+}
+
+const removeKeyword = (index) => {
+    keywords.value.splice(index, 1)
+    updateFormKeywords()
+}
+
+const handleComma = (event) => {
+    if (event.key === ',') {
+        event.preventDefault()
+        addKeyword()
+    }
+}
+
+const updateFormKeywords = () => {
+    form.meta_keywords = JSON.stringify(keywords.value)
+}
+
+// Watch to auto update JSON if keywords change
+watch(keywords, () => {
+    updateFormKeywords()
+})
+
 // Submit update
 function submit() {
     const formData = new FormData()
-
-    formData.append('title', form.title || category.title)
-    formData.append('created_by', form.created_by || category.created_by)
-    formData.append('stock', form.stock || category.stock)
-    formData.append('tag_id', form.tag_id || category.tag_id)
-    formData.append('description', form.description || category.description)
-    formData.append('meta_title', form.meta_title || category.meta_title)
-    formData.append('meta_keywords', form.meta_keywords || category.meta_keywords)
-    formData.append('meta_description', form.meta_description || category.meta_description)
-    if (form.image) {
-        formData.append('image', form.image)
-    }
-    formData.append('_method', 'PUT') // important
+    formData.append('title', form.title)
+    formData.append('created_by', form.created_by)
+    formData.append('stock', form.stock)
+    formData.append('tag_id', form.tag_id)
+    formData.append('description', form.description)
+    formData.append('meta_title', form.meta_title)
+    formData.append('meta_keywords', form.meta_keywords)
+    formData.append('meta_description', form.meta_description)
+    if (form.image) formData.append('image', form.image)
+    formData.append('_method', 'PUT')
 
     router.post(route('categories.update', category.id), formData, {
-        forceFormData: true, // <-- eta must
-        onSuccess: () => console.log("Updated successfully"),
+        forceFormData: true,
+        onSuccess: () => console.log('Updated successfully')
     })
 }
 </script>
@@ -127,7 +173,15 @@ function submit() {
                                     </div>
                                     <div class="col-lg-6">
                                         <label class="form-label">Meta Keywords</label>
-                                        <input type="text" v-model="form.meta_keywords" class="form-control" />
+                                        <div class="form-control d-flex flex-wrap gap-2" @click="focusInput">
+                                            <span v-for="(keyword, index) in keywords" :key="index" class="badge bg-success">
+                                                {{ keyword }}
+                                                <button type="button" class="btn-close btn-close-white ms-1" @click="removeKeyword(index)"></button>
+                                            </span>
+                                            <input ref="keywordInput" type="text" v-model="newKeyword" class="border-0 flex-grow-1"
+                                                   style="outline:none;" placeholder="Add keyword"
+                                                   @keydown.enter.prevent="addKeyword" @keydown="handleComma" />
+                                        </div>
                                     </div>
                                     <div class="col-lg-12">
                                         <label class="form-label">Meta Description</label>
@@ -161,5 +215,11 @@ function submit() {
     height: 120px;
     object-fit: cover;
     border-radius: 50%;
+}
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45em 0.65em;
+    font-size: 0.85rem;
 }
 </style>
