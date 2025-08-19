@@ -20,7 +20,7 @@ class CategoryController extends Controller
             'categories' => $cateogries,
         ]);
     }
-    
+
 
     /**
      * Show the form for creating a new resource.
@@ -40,25 +40,25 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'created_by' => 'required|string|max:255',
-            'stock' => 'required|integer',
-            'tag_id' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-            'meta_title' => 'nullable|string|max:255',
-            'meta_keywords' => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string|max:500',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120' // 5MB max
+            'title'             => 'required|string|max:255',
+            'created_by'        => 'required|string|max:255',
+            'stock'             => 'required|integer',
+            'tag_id'            => 'nullable|string|max:50',
+            'description'       => 'nullable|string',
+            'meta_title'        => 'nullable|string|max:255',
+            'meta_keywords'     => 'nullable|string|max:255',
+            'meta_description'  => 'nullable|string|max:500',
+            'image'             => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120' // 5MB max
         ]);
 
-        $category = new Category();
-        $category->title = $request->title;
-        $category->created_by = $request->created_by;
-        $category->stock = $request->stock;
-        $category->tag_id = $request->tag_id;
-        $category->description = $request->description;
-        $category->meta_title = $request->meta_title;
-        $category->meta_keywords = $request->meta_keywords;
+        $category                   = new Category();
+        $category->title            = $request->title;
+        $category->created_by       = $request->created_by;
+        $category->stock            = $request->stock;
+        $category->tag_id           = $request->tag_id;
+        $category->description      = $request->description;
+        $category->meta_title       = $request->meta_title;
+        $category->meta_keywords    = $request->meta_keywords;
         $category->meta_description = $request->meta_description;
 
         if($request->hasFile('image')) {
@@ -78,7 +78,7 @@ class CategoryController extends Controller
      */
     public function show(string $id)
     {
-        //
+        
     }
 
     /**
@@ -107,7 +107,7 @@ class CategoryController extends Controller
             'meta_title'        => 'nullable|string',
             'meta_keywords'     => 'nullable|string',
             'meta_description'  => 'nullable|string',
-            'image'             => 'nullable|image|max:5120', 
+            'image'             => 'nullable|image|max:5120',
         ]);
 
         $data = $request->only([

@@ -59,7 +59,30 @@ export default {
     closeModal() {
       this.showModal = false
       this.selectedCategory = null
-    }
+    },
+    parseKeywords(metaKeywords) {
+      if (!metaKeywords) return [];
+
+      try {
+        if (typeof metaKeywords === "string" && metaKeywords.startsWith("[")) {
+          return JSON.parse(metaKeywords);
+        }
+
+        if (typeof metaKeywords === "string") {
+          return metaKeywords.split(",").map(tag => tag.trim());
+        }
+
+        if (Array.isArray(metaKeywords)) {
+          return metaKeywords;
+        }
+
+        return [];
+      } catch (error) {
+        console.error("Invalid meta_keywords:", metaKeywords);
+        return [];
+      }
+    },
+
   }
 }
 </script>
@@ -75,19 +98,19 @@ export default {
             <h4 class="fw-bold mb-0">Category List</h4>
           </div>
           <div class="col-12 col-md-3">
-            <input 
-              v-model="search" 
-              type="text" 
-              class="form-control" 
-              placeholder="🔍 Search categories..." 
+            <input
+              v-model="search"
+              type="text"
+              class="form-control"
+              placeholder="🔍 Search categories..."
             />
           </div>
           <div class="col-12 col-md-3 d-flex justify-content-md-end justify-content-center">
             <Link
               :href="route('categories.create')"
               class="btn btn-gradient btn-sm text-white w-100 w-md-auto"
-              style="background: linear-gradient(135deg, #4caf50 0%, #81c784 100%); 
-                     box-shadow: 0 4px 6px rgba(0,0,0,0.15); 
+              style="background: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
+                     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
                      font-weight: 500; border-radius: 4px; padding: 8px 20px; transition: all 0.3s ease;"
             >
               <i class="bi bi-plus-lg"></i> Create Category
@@ -102,9 +125,10 @@ export default {
               <tr>
                 <th style="color:black">#</th>
                 <th style="color:black">Title</th>
-                <th style="color:black">Stock</th>
-                <th style="color:black">Category By</th>
-                <th style="color:black">Image</th>
+                <th style="color:black" class="text-center">Stock</th>
+                <th style="color:black" class="text-center">Category By</th>
+                <th style="color:black" class="text-center">Image</th>
+                <th style="color:black" class="text-center">Tags</th>
                 <th class="text-center" style="color:black">Actions</th>
               </tr>
             </thead>
@@ -112,12 +136,20 @@ export default {
               <tr v-for="(category, index) in paginatedCategories" :key="category.id">
                 <td>{{ index + 1 + (currentPage - 1) * itemsPerPage }}</td>
                 <td>{{ category.title }}</td>
-                <td>{{ category.stock }}</td>
-                <td>{{ category.created_by }}</td>
-                <td>
+                <td class="text-center">{{ category.stock }}</td>
+                <td class="text-center">{{ category.created_by }}</td>
+                <td class="text-center">
                   <img :src="`/${category.image}`" alt="Category Image" height="80" width="80" class="rounded" />
                 </td>
-
+                <td class="text-center">
+                    <span
+                        v-for="(tag, i) in parseKeywords(category.meta_keywords)"
+                        :key="i"
+                        class="badge bg-success me-1"
+                    >
+                        {{ tag }}
+                    </span>
+                </td>
                 <td class="text-center">
                   <div class="d-flex justify-content-center gap-2">
                     <button class="btn btn-sm btn-info text-white" @click="showCategory(category)">
@@ -126,8 +158,8 @@ export default {
                     <Link :href="route('categories.edit', category.id)" class="btn btn-sm btn-warning text-white">
                       ✏ Edit
                     </Link>
-                    <button 
-                      class="btn btn-sm btn-danger text-white" 
+                    <button
+                      class="btn btn-sm btn-danger text-white"
                       @click="deleteCategory(category.id)"
                     >
                       🗑 Delete
@@ -135,11 +167,11 @@ export default {
                   </div>
                 </td>
               </tr>
-              <tr v-if="filteredCategories.length === 0">
-                <td colspan="5" class="text-center text-muted py-3">
-                  No categories found.
+              <tr v-if="paginatedCategories.length === 0">
+                <td colspan="7" class="text-center text-muted py-3">
+                    No categories found.
                 </td>
-              </tr>
+            </tr>
             </tbody>
           </table>
         </div>
@@ -147,25 +179,25 @@ export default {
         <!-- Pagination -->
         <nav class="mt-3" v-if="totalPages > 1">
           <ul class="pagination justify-content-center mb-0 flex-wrap">
-            <li 
-              class="page-item" 
-              :class="{ disabled: currentPage === 1 }" 
+            <li
+              class="page-item"
+              :class="{ disabled: currentPage === 1 }"
               @click="currentPage > 1 && currentPage--"
             >
               <a class="page-link" href="#">«</a>
             </li>
-            <li 
-              class="page-item" 
-              v-for="page in totalPages" 
-              :key="page" 
-              :class="{ active: currentPage === page }" 
+            <li
+              class="page-item"
+              v-for="page in totalPages"
+              :key="page"
+              :class="{ active: currentPage === page }"
               @click="currentPage = page"
             >
               <a class="page-link" href="#">{{ page }}</a>
             </li>
-            <li 
-              class="page-item" 
-              :class="{ disabled: currentPage === totalPages }" 
+            <li
+              class="page-item"
+              :class="{ disabled: currentPage === totalPages }"
               @click="currentPage < totalPages && currentPage++"
             >
               <a class="page-link" href="#">»</a>
@@ -174,28 +206,28 @@ export default {
         </nav>
 
         <!-- Modal for Show -->
-        <div class="modal fade" 
-            :class="{ show: showModal }" 
-            style="display: block;" 
+        <div class="modal fade"
+            :class="{ show: showModal }"
+            style="display: block;"
             v-if="showModal">
 
           <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0 rounded-4" 
+            <div class="modal-content shadow-lg border-0 rounded-4"
                 style="overflow: hidden;">
 
               <!-- Header -->
-              <div class="modal-header text-white" 
+              <div class="modal-header text-white"
                   style="background: linear-gradient(135deg, #ff7e5f, #feb47b);">
                 <h5 class="modal-title fw-bold">
                   <i class="bi bi-grid-fill me-2"></i> Category Details
                 </h5>
-                <button type="button" 
-                        class="btn-close btn-close-white" 
+                <button type="button"
+                        class="btn-close btn-close-white"
                         @click="closeModal"></button>
               </div>
 
               <!-- Body -->
-              <div class="modal-body p-4" 
+              <div class="modal-body p-4"
                   style="background: linear-gradient(180deg, #ffffff, #f7f9fc);">
                 <div class="row g-3">
 
@@ -215,16 +247,16 @@ export default {
 
                   <div v-if="selectedCategory.image" class="col-12 text-center mt-3">
                     <strong>Image:</strong><br>
-                    <img :src="`/${selectedCategory.image}`" 
-                        alt="Category Image" 
-                        class="img-thumbnail shadow-lg" 
+                    <img :src="`/${selectedCategory.image}`"
+                        alt="Category Image"
+                        class="img-thumbnail shadow-lg"
                         style="width: 200px; height: 200px; object-fit: cover; border-radius: 12px;" />
                   </div>
                 </div>
               </div>
 
               <!-- Footer -->
-              <div class="modal-footer" 
+              <div class="modal-footer"
                   style="background: #fafafa;">
                 <button class="btn btn-primary border me-2" @click="closeModal">
                   <i class="bi bi-x-circle me-1"></i> Close

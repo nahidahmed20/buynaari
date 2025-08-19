@@ -23,13 +23,11 @@
         image: null
     })
 
-    // --- Meta Keywords Methods ---
     const focusInput = () => {
         tagInput.value.focus()
     }
 
-    const addTag = (event) => {
-        event.preventDefault()
+    const addTag = () => {
         if (inputValue.value.trim() !== "") {
             tags.value.push(inputValue.value.trim())
             updateForm()
@@ -47,9 +45,19 @@
     }
 
     const handleKeydown = (event) => {
+        if (event.key === " ") {
+            event.preventDefault()   // default space prevent
+            addTag()
+        }
+
+        if (event.key === "Enter") {
+            event.preventDefault()
+            addTag()
+        }
+
         if (event.key === ",") {
             event.preventDefault()
-            addTag(event)
+            addTag()
         }
     }
 

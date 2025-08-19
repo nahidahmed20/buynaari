@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('subcategories', function (Blueprint $table) {
+        Schema::create('sub_categories', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('category_id');
-            $table->string('name');
-            $table->string('thumbnail')->nullable();
+            $table->string('title');
+            $table->string('created_by')->nullable();
+            $table->integer('stock')->default(0);
+            $table->string('tag_id')->nullable();
             $table->text('description')->nullable();
+            $table->string('image')->nullable();
             $table->string('meta_title')->nullable();
             $table->string('meta_keywords')->nullable();
             $table->text('meta_description')->nullable();

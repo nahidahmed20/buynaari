@@ -14,16 +14,16 @@
                <!-- Sidebar Logo -->
                <div class="logo-box">
                     <Link :href="route('dashboard')" class="logo-dark">
-                         <img src="/backend/assets/images/logo-sm.png" 
+                         <img src="/backend/assets/images/logo-sm.png"
                               class="logo-sm" alt="logo sm" width="40" height="40">
-                         <img src="/backend/assets/images/logo-dark.png" 
+                         <img src="/backend/assets/images/logo-dark.png"
                               class="logo-lg" alt="logo dark" width="150" height="40">
                     </Link>
 
                     <Link :href="route('dashboard')" class="logo-light">
-                         <img src="/backend/assets/images/logo-sm.png" 
+                         <img src="/backend/assets/images/logo-sm.png"
                               class="logo-sm" alt="logo sm" width="40" height="40">
-                         <img src="/backend/assets/images/logo-light.png" 
+                         <img src="/backend/assets/images/logo-light.png"
                               class="logo-lg" alt="logo light" width="150" height="40">
                     </Link>
                     </div>
@@ -87,13 +87,33 @@
                                    <ul class="nav sub-navbar-nav">
                                         <li class="sub-nav-item">
                                              <Link class="sub-nav-link" :href="route('categories.index')">List</Link>
-                                        </li>      
+                                        </li>
                                         <li class="sub-nav-item">
                                              <Link class="sub-nav-link" :href="route('categories.create')" >Create</Link>
                                         </li>
                                    </ul>
                               </div>
                          </li>
+
+                         <li class="nav-item">
+                              <a class="nav-link menu-arrow" href="#sidebarSubCategory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSubCategory">
+                                   <span class="nav-icon">
+                                        <iconify-icon icon="solar:clipboard-list-bold-duotone"></iconify-icon>
+                                   </span>
+                                   <span class="nav-text">Sub Category </span>
+                              </a>
+                              <div class="collapse" id="sidebarSubCategory">
+                                   <ul class="nav sub-navbar-nav">
+                                        <li class="sub-nav-item">
+                                             <Link class="sub-nav-link" :href="route('subcategories.index')">List</Link>
+                                        </li>
+                                        <li class="sub-nav-item">
+                                             <Link class="sub-nav-link" :href="route('subcategories.create')" >Create</Link>
+                                        </li>
+                                   </ul>
+                              </div>
+                         </li>
+
 
                          <li class="nav-item">
                               <a class="nav-link menu-arrow" href="#sidebarInventory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarInventory">
@@ -199,7 +219,7 @@
                                         </li>
                                         <li class="sub-nav-item">
                                              <a class="sub-nav-link" href="invoice-details.html">Details</a>
-                                        </li>                            
+                                        </li>
                                         <li class="sub-nav-item">
                                              <a class="sub-nav-link" href="invoice-add.html">Create</a>
                                         </li>
@@ -481,16 +501,16 @@
                                    <ul class="nav sub-navbar-nav">
                                         <li class="sub-nav-item">
                                              <a class="sub-nav-link" href="auth-signin.html">Sign In</a>
-                                        </li>                              
+                                        </li>
                                         <li class="sub-nav-item">
                                              <a class="sub-nav-link" href="auth-signup.html">Sign Up</a>
-                                        </li>                           
+                                        </li>
                                         <li class="sub-nav-item">
                                              <a class="sub-nav-link" href="auth-password.html">Reset Password</a>
-                                        </li>                              
+                                        </li>
                                         <li class="sub-nav-item">
                                              <a class="sub-nav-link" href="auth-lock-screen.html">Lock Screen</a>
-                                        </li>                          
+                                        </li>
                                    </ul>
                               </div>
                          </li>
