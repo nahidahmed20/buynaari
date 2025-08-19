@@ -192,8 +192,8 @@ function submit() {
                                     </div>
                                     <div class="col-lg-12">
                                         <label class="form-label">Description</label>
-                                        <textarea v-model="form.description" class="form-control" rows="4">{{ form.description }}</textarea>
-                                        <span class="text-danger" v-if="form.errors.description">{{ form.description }}</span>
+                                        <textarea v-model="form.description" class="form-control" rows="4"></textarea>
+                                        <span class="text-danger" v-if="form.errors.description">{{ form.errors.description }}</span>
                                     </div>
                                 </div>
 

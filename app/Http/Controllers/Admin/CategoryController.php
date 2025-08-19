@@ -64,7 +64,7 @@ class CategoryController extends Controller
         if($request->hasFile('image')) {
             $file = $request->file('image');
             $filename = time().'_'.$file->getClientOriginalName();
-            $file->move(public_path('backend/uploads/categories'), $filename);
+            $file->move(public_path('backend/uploads/categories/'), $filename);
             $category->image = 'backend/uploads/categories/' . $filename;
         }
 

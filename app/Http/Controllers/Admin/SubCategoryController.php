@@ -17,11 +17,10 @@ class SubCategoryController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Admin/Subcategories/Index',[
-            'subcategories' => SubCategory::orderByDesc('id')->get(),
+        return Inertia::render('Admin/Subcategories/Index', [
+            'subcategories' => SubCategory::with('category')->orderByDesc('id')->get(),
         ]);
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -89,15 +88,62 @@ class SubCategoryController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        return Inertia::render('Admin/Subcategories/Edit', [
+            'categories' => Category::all(),
+           'subcategory' => SubCategory::where('id', $id)->with('category')->first(),
+            'creators' => User::all()
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $subcategory = SubCategory::findOrFail($id);
+
+        $request->validate([
+            'title'             => 'required|string|max:255',
+            'category_id'       => 'required',
+            'created_by'        => 'required|string|max:255',
+            'stock'             => 'required|integer',
+            'tag_id'            => 'nullable|string|max:50',
+            'description'       => 'nullable|string',
+            'meta_title'        => 'nullable|string|max:255',
+            'meta_keywords'     => 'nullable|string|max:255',
+            'meta_description'  => 'nullable|string|max:500',
+            'image'             => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
+        ]);
+
+
+        $subCategoryImage = $subcategory->image; // default old image
+
+        if ($request->hasFile('image')) {
+            // delete old image if exists
+            if ($subCategoryImage && file_exists(public_path($subCategoryImage))) {
+                unlink(public_path($subCategoryImage));
+            }
+
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('backend/uploads/subcategories/'), $filename);
+            $subCategoryImage = 'backend/uploads/subcategories/' . $filename;
+        }
+
+        $subcategory->update([
+            'title'             => $request->title,
+            'category_id'       => $request->category_id,
+            'created_by'        => $request->created_by,
+            'stock'             => $request->stock,
+            'tag_id'            => $request->tag_id,
+            'description'       => $request->description,
+            'meta_title'        => $request->meta_title,
+            'meta_keywords'     => $request->meta_keywords,
+            'meta_description'  => $request->meta_description,
+            'image'             => $subCategoryImage,
+        ]);
+
+        return redirect()->route('subcategories.index')->with('success', 'Sub Category updated successfully.');
     }
 
     /**
