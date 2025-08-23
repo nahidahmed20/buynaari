@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
@@ -39,47 +40,36 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'title'             => 'required|string|max:255',
-            'created_by'        => 'required|string|max:255',
-            'stock'             => 'required|integer',
-            'tag_id'            => 'nullable|string|max:50',
-            'description'       => 'nullable|string',
-            'meta_title'        => 'nullable|string|max:255',
-            'meta_keywords'     => 'nullable|string|max:255',
-            'meta_description'  => 'nullable|string|max:500',
-            'image'             => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120' // 5MB max
+        $validated = $request->validate([
+            'title'            => 'required|string|max:255',
+            'created_by'       => 'required|string|max:255',
+            'stock'            => 'required|integer',
+            'tag_id'           => 'nullable|string|max:50',
+            'description'      => 'nullable|string',
+            'meta_title'       => 'nullable|string|max:255',
+            'meta_keywords'    => 'nullable', // allow array
+            'meta_description' => 'nullable|string|max:500',
+            'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
         ]);
 
-        $category                   = new Category();
-        $category->title            = $request->title;
-        $category->created_by       = $request->created_by;
-        $category->stock            = $request->stock;
-        $category->tag_id           = $request->tag_id;
-        $category->description      = $request->description;
-        $category->meta_title       = $request->meta_title;
-        $category->meta_keywords    = $request->meta_keywords;
-        $category->meta_description = $request->meta_description;
-
-        if($request->hasFile('image')) {
-            $file = $request->file('image');
-            $filename = time().'_'.$file->getClientOriginalName();
-            $file->move(public_path('backend/uploads/categories/'), $filename);
-            $category->image = 'backend/uploads/categories/' . $filename;
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('backend/uploads/categories', 'public');
         }
 
-        $category->save();
+        if (isset($validated['meta_keywords']) && is_array($validated['meta_keywords'])) {
+            $validated['meta_keywords'] = json_encode($validated['meta_keywords']);
+        }
+
+        Category::create($validated);
 
         return redirect()->route('categories.index')->with('success', 'Category created successfully.');
     }
 
+
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        
-    }
+    public function show(string $id) {}
 
     /**
      * Show the form for editing the specified resource.
@@ -96,57 +86,74 @@ class CategoryController extends Controller
      * Update the specified resource in storage.
      */
 
-    public function update(Request $request, Category $category)
+    public function update(Request $request, string $id)
     {
-        $request->validate([
-            'title'             => 'required|string',
-            'created_by'        => 'required|string',
+        // Fetch category
+        $category = Category::findOrFail($id);
+
+        // Validate
+        $validated = $request->validate([
+            'title'             => 'required|string|max:255',
+            'created_by'        => 'required|string|max:255',
             'stock'             => 'required|numeric',
-            'tag_id'            => 'nullable|string',
+            'tag_id'            => 'nullable|string|max:50',
             'description'       => 'nullable|string',
-            'meta_title'        => 'nullable|string',
-            'meta_keywords'     => 'nullable|string',
-            'meta_description'  => 'nullable|string',
-            'image'             => 'nullable|image|max:5120',
+            'meta_title'        => 'nullable|string|max:255',
+            'meta_keywords'     => 'nullable', // can be JSON or array
+            'meta_description'  => 'nullable|string|max:500',
+            'image'             => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
         ]);
 
-        $data = $request->only([
-            'title', 'created_by', 'stock', 'tag_id', 'description',
-            'meta_title', 'meta_keywords', 'meta_description'
-        ]);
-
-        // Image handle
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($category->image && file_exists(public_path($category->image))) {
-                unlink(public_path($category->image));
+        // Handle meta_keywords
+        if (isset($validated['meta_keywords'])) {
+            if (is_array($validated['meta_keywords'])) {
+                $validated['meta_keywords'] = json_encode($validated['meta_keywords']);
             }
-            $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
-            $image->move(public_path('backend/uploads/categories/'), $imageName);
-            $data['image'] = 'backend/uploads/categories/' . $imageName;
+        } else {
+            $validated['meta_keywords'] = $category->meta_keywords; // keep old if not provided
         }
 
-        $category->update($data);
+        // Handle image
+        if ($request->file('image')) {
+            // Delete old image if exists
+            if ($category->image && Storage::disk('public')->exists($category->image)) {
+                Storage::disk('public')->delete($category->image);
+            }
+            // Store new image
+            $validated['image'] = $request->file('image')->store('backend/uploads/categories', 'public');
+        } else {
+            $validated['image'] = $category->image; // keep old image if no new upload
+        }
+
+        // Update category
+        $category->update($validated);
+
 
         return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
     }
 
+
     /**
      * Remove the specified resource from storage.
      */
+
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
 
-        // Delete image if exists
-        if ($category->image && file_exists(public_path($category->image))) {
-            unlink(public_path($category->image));
+        // Check if category has subcategories
+        if ($category->subCategories()->exists()) {
+            return redirect()->route('categories.index')->with('error', 'Delete subcategories first.');
         }
 
+        // Delete image if exists
+        if ($category->image && Storage::disk('public')->exists($category->image)) {
+            Storage::disk('public')->delete($category->image);
+        }
+
+        // Delete category
         $category->delete();
 
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }
-
 }

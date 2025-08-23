@@ -58,20 +58,12 @@
                               <div class="collapse" id="sidebarProducts">
                                    <ul class="nav sub-navbar-nav">
                                         <li class="sub-nav-item">
-                                             <a class="sub-nav-link" href="product-list.html">List</a>
+                                             <Link class="sub-nav-link" :href="route('products.index')">List</Link>
                                         </li>
                                         <li class="sub-nav-item">
-                                             <a class="sub-nav-link" href="product-grid.html">Grid</a>
+                                             <Link class="sub-nav-link" :href="route('products.create')">Create</Link>
                                         </li>
-                                        <li class="sub-nav-item">
-                                             <a class="sub-nav-link" href="product-details.html">Details</a>
-                                        </li>
-                                        <li class="sub-nav-item">
-                                             <a class="sub-nav-link" href="product-edit.html">Edit</a>
-                                        </li>
-                                        <li class="sub-nav-item">
-                                             <a class="sub-nav-link" href="product-add.html">Create</a>
-                                        </li>
+                                        
                                    </ul>
                               </div>
                          </li>

@@ -1,15 +1,14 @@
 <script setup>
-    import { ref, watch } from 'vue'
+    import { ref } from 'vue'
     import { useForm, usePage, Link } from '@inertiajs/vue3'
     import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
     const creators = usePage().props.creators || []
 
-    // State
-    const tags = ref([])               // Tag list
-    const inputValue = ref("")         // Current input
-    const tagInput = ref(null)         // Input ref
-    const imagePreview = ref(null)     // Image preview
+    const tags = ref([])
+    const inputValue = ref("")
+    const tagInput = ref(null)
+    const imagePreview = ref('/backend/assets/images/product/p-1.png')
 
     const form = useForm({
         title: '',
@@ -18,56 +17,35 @@
         tag_id: '',
         description: '',
         meta_title: '',
-        meta_keywords: "[]",              // JSON formatted tags
+        meta_keywords: [], // array
         meta_description: '',
         image: null
     })
 
-    const focusInput = () => {
-        tagInput.value.focus()
-    }
-
+    // --- Tag Handling ---
     const addTag = () => {
-        if (inputValue.value.trim() !== "") {
+        if (inputValue.value.trim()) {
             tags.value.push(inputValue.value.trim())
-            updateForm()
-            inputValue.value = ""
+            form.meta_keywords = [...tags.value]
+            inputValue.value = ''
         }
     }
 
     const removeTag = (index) => {
         tags.value.splice(index, 1)
-        updateForm()
-    }
-
-    const updateForm = () => {
-        form.meta_keywords = JSON.stringify(tags.value)
+        form.meta_keywords = [...tags.value]
     }
 
     const handleKeydown = (event) => {
-        if (event.key === " ") {
-            event.preventDefault()   // default space prevent
-            addTag()
-        }
-
-        if (event.key === "Enter") {
-            event.preventDefault()
-            addTag()
-        }
-
-        if (event.key === ",") {
+        if (['Enter', ' ', ','].includes(event.key)) {
             event.preventDefault()
             addTag()
         }
     }
 
-    watch(tags, (newTags) => {
-        form.meta_keywords = JSON.stringify(newTags)
-    })
-
     // --- Image Preview ---
-    function handleImage(event) {
-        const file = event.target.files[0]
+    const handleImage = (e) => {
+        const file = e.target.files[0]
         if (file) {
             form.image = file
             imagePreview.value = URL.createObjectURL(file)
@@ -77,25 +55,17 @@
         }
     }
 
-    // --- Submit ---
-    function submit() {
-        const formData = new FormData()
-        formData.append('title', form.title)
-        formData.append('created_by', form.created_by)
-        formData.append('stock', form.stock)
-        formData.append('tag_id', form.tag_id)
-        formData.append('description', form.description)
-        formData.append('meta_title', form.meta_title)
-        formData.append('meta_keywords', form.meta_keywords)
-        formData.append('meta_description', form.meta_description)
-        if (form.image) formData.append('image', form.image)
-
+    // --- Submit Function ---
+    const submit = () => {
         form.post(route('categories.store'), {
-            data: formData,
+            forceFormData: true, // important for file uploads
             onSuccess: () => {
                 form.reset()
-                imagePreview.value = null
-            }
+                tags.value = []
+                imagePreview.value = '/backend/assets/images/product/p-1.png'
+                console.log('form submitted')
+            },
+
         })
     }
 </script>
@@ -111,9 +81,8 @@
                     <div class="col-xl-3 col-lg-4 mx-auto">
                         <div class="card mb-3">
                             <div class="card-body text-center bg-light rounded">
-                                <img :src="imagePreview || '/backend/assets/images/product/p-1.png'"
-                                    class="avatar-xxl" />
-                                <h5 class="mt-3">Add Category </h5>
+                                <img :src="imagePreview" class="avatar-xxl" />
+                                <h5 class="mt-3">Add Category</h5>
                             </div>
                         </div>
                     </div>
@@ -127,12 +96,13 @@
                                     <h4 class="mb-0 fw-bold"><i class="bi bi-folder-plus me-2"></i> Add Category</h4>
                                 </div>
                                 <div class="card-body">
+
                                     <!-- Image -->
                                     <div class="mb-4">
                                         <label class="form-label fw-bold">Thumbnail Image (optional)</label>
                                         <input type="file" class="form-control" @change="handleImage" />
                                         <span class="text-danger" v-if="form.errors.image">{{ form.errors.image
-                                        }}</span>
+                                            }}</span>
                                     </div>
 
                                     <!-- General Info -->
@@ -142,7 +112,7 @@
                                             <input type="text" v-model="form.title" class="form-control"
                                                 placeholder="Enter Title" required />
                                             <span class="text-danger" v-if="form.errors.title">{{ form.errors.title
-                                            }}</span>
+                                                }}</span>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Created By</label>
@@ -159,7 +129,7 @@
                                             <input type="number" v-model="form.stock" class="form-control"
                                                 placeholder="Quantity" required />
                                             <span class="text-danger" v-if="form.errors.stock">{{ form.errors.stock
-                                            }}</span>
+                                                }}</span>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Tag ID</label>
@@ -182,22 +152,16 @@
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Meta Keywords</label>
-                                            <div class="form-control d-flex flex-wrap gap-2" @click="focusInput">
-
-                                                <!-- Show tags -->
+                                            <div class="form-control d-flex flex-wrap gap-2">
                                                 <span v-for="(tag, index) in tags" :key="index"
                                                     class="badge bg-success">
                                                     {{ tag }}
                                                     <button type="button" class="btn-close btn-close-white ms-1"
                                                         @click="removeTag(index)"></button>
                                                 </span>
-
-                                                <!-- Input box -->
-                                                <input ref="tagInput" type="text" v-model="inputValue"
+                                                <input type="text" ref="tagInput" v-model="inputValue"
                                                     class="border-0 flex-grow-1" style="outline: none;"
-                                                    placeholder="Meta Tag" @keydown.enter.prevent="addTag"
-                                                    @keydown="handleKeydown" />
-
+                                                    placeholder="Meta Tag" @keydown="handleKeydown" />
                                             </div>
                                         </div>
                                         <div class="col-lg-12">
@@ -210,9 +174,7 @@
                                     <!-- Buttons -->
                                     <div class="d-flex justify-content-end">
                                         <Link :href="route('categories.index')"
-                                            class="btn btn-danger rounded-pill px-4 me-2 shadow-sm">
-                                        Cancel
-                                        </Link>
+                                            class="btn btn-danger rounded-pill px-4 me-2 shadow-sm">Cancel</Link>
                                         <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm">
                                             <i class="bi bi-save me-1"></i> Save Category
                                         </button>

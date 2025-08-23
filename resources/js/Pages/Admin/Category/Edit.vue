@@ -1,13 +1,12 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useForm, usePage, Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
-// Props from Laravel
 const category = usePage().props.category
 const creators = usePage().props.creators || []
 
-// Form pre-filled with existing data
+// Form
 const form = useForm({
     title: category.title,
     created_by: category.created_by,
@@ -15,17 +14,16 @@ const form = useForm({
     tag_id: category.tag_id,
     description: category.description,
     meta_title: category.meta_title,
-    meta_keywords: category.meta_keywords, // JSON string
+    meta_keywords: [], // array
     meta_description: category.meta_description,
-    image: null
+    image: null,
+    _method: 'put'
 })
 
 // Image preview
 const imagePreview = ref(category.image ? '/' + category.image : '/backend/assets/images/product/p-1.png')
-
-// Handle image selection
-function handleImage(event) {
-    const file = event.target.files[0]
+const handleImage = (e) => {
+    const file = e.target.files[0]
     if (file) {
         form.image = file
         imagePreview.value = URL.createObjectURL(file)
@@ -35,75 +33,48 @@ function handleImage(event) {
     }
 }
 
-// Meta keywords handling
-const keywords = ref([])       // tag list
-const newKeyword = ref('')     // current input
-const keywordInput = ref(null) // input ref
+// Meta keywords
+const tags = ref([])
+const inputValue = ref('')
 
-// Initialize with existing meta_keywords
 onMounted(() => {
     try {
-        const parsed = JSON.parse(category.meta_keywords)
-        if (Array.isArray(parsed)) keywords.value = parsed
+        const parsed = JSON.parse(category.meta_keywords || '[]')
+        if (Array.isArray(parsed)) {
+            tags.value = parsed
+            form.meta_keywords = [...tags.value]
+        }
     } catch (e) {
-        keywords.value = []
+        tags.value = []
+        form.meta_keywords = []
     }
 })
 
-// Functions
-const focusInput = () => {
-    keywordInput.value.focus()
-}
-
-const addKeyword = () => {
-    const val = newKeyword.value.trim()
-    if (val !== '') {
-        keywords.value.push(val)
-        newKeyword.value = ''
-        updateFormKeywords()
+const addTag = () => {
+    if (inputValue.value.trim()) {
+        tags.value.push(inputValue.value.trim())
+        form.meta_keywords = [...tags.value]
+        inputValue.value = ''
     }
 }
 
-const removeKeyword = (index) => {
-    keywords.value.splice(index, 1)
-    updateFormKeywords()
+const removeTag = (index) => {
+    tags.value.splice(index, 1)
+    form.meta_keywords = [...tags.value]
 }
 
-// Handle key press: space, enter, comma
 const handleKeydown = (event) => {
-    if (event.key === ' ' || event.key === 'Enter' || event.key === ',') {
+    if (['Enter', ' ', ','].includes(event.key)) {
         event.preventDefault()
-        addKeyword()
+        addTag()
     }
 }
-
-// Update JSON in form
-const updateFormKeywords = () => {
-    form.meta_keywords = JSON.stringify(keywords.value)
-}
-
-// Watch to auto update JSON if keywords change
-watch(keywords, () => {
-    updateFormKeywords()
-})
 
 // Submit update
-function submit() {
-    const formData = new FormData()
-    formData.append('title', form.title)
-    formData.append('created_by', form.created_by)
-    formData.append('stock', form.stock)
-    formData.append('tag_id', form.tag_id)
-    formData.append('description', form.description)
-    formData.append('meta_title', form.meta_title)
-    formData.append('meta_keywords', form.meta_keywords)
-    formData.append('meta_description', form.meta_description)
-    if (form.image) formData.append('image', form.image)
-    formData.append('_method', 'PUT')
-
-    router.post(route('categories.update', category.id), formData, {
+const submit = () => {
+    form.post(route('categories.update', category.id), {
         forceFormData: true,
-        onSuccess: () => console.log('Updated successfully')
+        onSuccess: () => console.log('Category updated successfully')
     })
 }
 </script>
@@ -131,6 +102,7 @@ function submit() {
                                 <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i> Edit Category</h4>
                             </div>
                             <div class="card-body">
+
                                 <!-- Image -->
                                 <div class="mb-4">
                                     <label class="form-label fw-bold">Thumbnail Image (optional)</label>
@@ -145,6 +117,7 @@ function submit() {
                                         <input type="text" v-model="form.title" class="form-control" placeholder="Enter Title" />
                                         <span class="text-danger" v-if="form.errors.title">{{ form.errors.title }}</span>
                                     </div>
+
                                     <div class="col-lg-6">
                                         <label class="form-label">Created By</label>
                                         <select v-model="form.created_by" class="form-select">
@@ -153,15 +126,18 @@ function submit() {
                                         </select>
                                         <span class="text-danger" v-if="form.errors.created_by">{{ form.errors.created_by }}</span>
                                     </div>
+
                                     <div class="col-lg-6">
                                         <label class="form-label">Stock</label>
                                         <input type="number" v-model="form.stock" class="form-control" placeholder="Quantity" />
                                         <span class="text-danger" v-if="form.errors.stock">{{ form.errors.stock }}</span>
                                     </div>
+
                                     <div class="col-lg-6">
                                         <label class="form-label">Tag ID</label>
                                         <input type="text" v-model="form.tag_id" class="form-control" placeholder="#******" />
                                     </div>
+
                                     <div class="col-lg-12">
                                         <label class="form-label">Description</label>
                                         <textarea v-model="form.description" class="form-control" rows="4"></textarea>
@@ -174,34 +150,27 @@ function submit() {
                                         <label class="form-label">Meta Title</label>
                                         <input type="text" v-model="form.meta_title" class="form-control" placeholder="Meta Title" />
                                     </div>
+
                                     <div class="col-lg-6">
                                         <label class="form-label">Meta Keywords</label>
-                                        <div class="form-control d-flex flex-wrap gap-2" @click="focusInput">
-
-                                            <!-- Show tags -->
-                                            <span v-for="(tag, index) in keywords" :key="index" class="badge bg-success">
+                                        <div class="form-control d-flex flex-wrap gap-2">
+                                            <span v-for="(tag, index) in tags" :key="index" class="badge bg-success">
                                                 {{ tag }}
-                                                <button type="button" class="btn-close btn-close-white ms-1" @click="removeKeyword(index)"></button>
+                                                <button type="button" class="btn-close btn-close-white ms-1" @click="removeTag(index)"></button>
                                             </span>
-
-                                            <!-- Input box -->
-                                            <input ref="keywordInput" type="text" v-model="newKeyword"
-                                                   class="border-0 flex-grow-1" style="outline: none;"
-                                                   placeholder="Meta Tag" @keydown="handleKeydown" />
+                                            <input type="text" ref="tagInput" v-model="inputValue" class="border-0 flex-grow-1" style="outline: none;" placeholder="Meta Tag" @keydown="handleKeydown" />
                                         </div>
                                     </div>
+
                                     <div class="col-lg-12">
-                                        <label class="form-label">Description</label>
-                                        <textarea v-model="form.description" class="form-control" rows="4"></textarea>
-                                        <span class="text-danger" v-if="form.errors.description">{{ form.errors.description }}</span>
+                                        <label class="form-label">Meta Description</label>
+                                        <textarea v-model="form.meta_description" class="form-control" rows="3"></textarea>
                                     </div>
                                 </div>
 
                                 <!-- Buttons -->
                                 <div class="d-flex justify-content-end">
-                                    <Link :href="route('categories.index')" class="btn btn-danger rounded-pill px-4 me-2 shadow-sm">
-                                        Cancel
-                                    </Link>
+                                    <Link :href="route('categories.index')" class="btn btn-danger rounded-pill px-4 me-2 shadow-sm">Cancel</Link>
                                     <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm">
                                         <i class="bi bi-save me-1"></i> Update Category
                                     </button>
@@ -211,6 +180,7 @@ function submit() {
                         </div>
                     </form>
                 </div>
+
             </div>
         </div>
     </div>
